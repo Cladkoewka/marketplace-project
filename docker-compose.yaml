@@ -1,0 +1,36 @@
+services:
+  orders-db:
+    image: postgres:latest
+    container_name: orders-postgres
+    environment:
+      POSTGRES_USER: orders-user
+      POSTGRES_PASSWORD: orders-pass
+      POSTGRES_DB: orders
+    ports:
+      - "5432:5432"
+    volumes:
+      - orders-db-data:/var/lib/postgresql/data
+    networks:
+      - marketplace
+
+  orders-service:
+    build: ./services/orders
+    container_name: orders-service
+    env_file:
+      - ./services/orders/.env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - orders-db
+    networks:
+      - marketplace
+
+volumes:
+  orders-db-data:
+
+networks:
+  marketplace:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/16
