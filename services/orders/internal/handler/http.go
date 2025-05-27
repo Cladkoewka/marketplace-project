@@ -7,8 +7,10 @@ import (
 	"strconv"
 
 	"github.com/Cladkoewka/marketplace-project/services/orders/internal/domain"
+	"github.com/Cladkoewka/marketplace-project/services/orders/internal/metrics"
 	"github.com/Cladkoewka/marketplace-project/services/orders/internal/service"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 type OrderHandler struct {
@@ -21,6 +23,10 @@ func NewOrderHandler(service *service.OrderService) *OrderHandler {
 
 func SetupRouter(h *OrderHandler) http.Handler {
 	router := chi.NewRouter()
+
+	router.Use(metrics.MetricsMiddleware)
+	router.Handle("/metrics", promhttp.Handler())
+
 	router.Post("/orders", h.create)
 	router.Get("/orders/{id}", h.getByID)
 	router.Get("/orders", h.getByCustomerID)

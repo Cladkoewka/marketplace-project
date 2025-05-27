@@ -10,12 +10,21 @@ import (
 	"github.com/Cladkoewka/marketplace-project/services/orders/internal/handler"
 	"github.com/Cladkoewka/marketplace-project/services/orders/internal/repository"
 	"github.com/Cladkoewka/marketplace-project/services/orders/internal/service"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
 	cfg := config.Load()
 	logger := initLogger(cfg.Log.Level)
 	logger.Info("starting order service")
+
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		slog.Info("Prometheus metrics available at :2112/metrics")
+		if err := http.ListenAndServe(":2112", nil); err != nil {
+			slog.Error("failed to start metrics server", slog.String("error", err.Error()))
+		}
+	}()
 
 	ctx := context.Background()
 	db, err := repository.NewPostgresDB(ctx, cfg.DB)
