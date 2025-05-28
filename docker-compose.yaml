@@ -38,6 +38,8 @@ services:
       - customers-db-data:/var/lib/postgresql/data
     networks:
       - marketplace
+    depends_on:
+      - kafka
 
   customers-service:
     build: ./services/customers
@@ -85,12 +87,35 @@ services:
       - marketplace
     depends_on:
       - prometheus
+  
+  zookeeper:
+    container_name: zookeeper
+    image: confluentinc/cp-zookeeper:7.6.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    networks:
+      - marketplace
+
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:7.6.0
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - marketplace
 
 volumes:
   orders-db-data:
   customers-db-data:
   grafana-data:
-
 
 networks:
   marketplace:

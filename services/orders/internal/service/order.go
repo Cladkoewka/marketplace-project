@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/Cladkoewka/marketplace-project/services/orders/internal/domain"
+	"github.com/Cladkoewka/marketplace-project/services/orders/internal/kafka"
+	"github.com/Cladkoewka/marketplace-project/services/orders/internal/kafka/event"
 )
 
 type OrderRepository interface {
@@ -14,10 +17,11 @@ type OrderRepository interface {
 
 type OrderService struct {
 	repository OrderRepository
+	producer   *kafka.Producer
 }
 
-func NewOrderService(repository OrderRepository) *OrderService {
-	return &OrderService{repository: repository}
+func NewOrderService(repo OrderRepository, producer *kafka.Producer) *OrderService {
+	return &OrderService{repository: repo, producer: producer}
 }
 
 func (s *OrderService) Create(ctx context.Context, order *domain.Order) error {
@@ -25,7 +29,19 @@ func (s *OrderService) Create(ctx context.Context, order *domain.Order) error {
 		order.Status = "pending"
 	}
 
-	return s.repository.Create(ctx, order)
+	if err := s.repository.Create(ctx, order); err != nil {
+		return err
+	}
+
+	event := event.OrderPlacedEvent{
+		Event:      "order_placed",
+		Timestamp:  time.Now().UTC().Format(time.RFC3339),
+		OrderID:    order.ID,
+		CustomerID: order.CustomerID,
+		Status:     order.Status,
+	}
+
+	return s.producer.Send(ctx, "order", event)
 }
 
 func (s *OrderService) GetById(ctx context.Context, id int64) (*domain.Order, error) {

@@ -1,7 +1,7 @@
 package domain
 
 type Order struct {
-	ID         int    `json:"id"`
-	CustomerID int    `json:"customer_id"`
+	ID         int64    `json:"id"`
+	CustomerID int64    `json:"customer_id"`
 	Status     string `json:"status"`
 }

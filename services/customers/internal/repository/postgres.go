@@ -43,3 +43,14 @@ func (r *CustomerRepository) GetByEmail(ctx context.Context, email string) (*dom
 	err := row.Scan(&c.ID, &c.Email, &c.Name, &c.Phone, &c.Address)
 	return c, err
 }
+
+func (r *CustomerRepository) IncrementActivityScore(ctx context.Context, customerID int64, delta int) error {
+	query := `
+		UPDATE customers
+		SET activity_score = activity_score + $1
+		WHERE id = $2
+	`
+	_, err := r.db.Exec(ctx, query, delta, customerID)
+	return err
+}
+

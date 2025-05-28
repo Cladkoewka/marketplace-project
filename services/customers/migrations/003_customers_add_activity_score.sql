@@ -1,0 +1,2 @@
+ALTER TABLE customers
+ADD COLUMN activity_score INT NOT NULL DEFAULT 0;

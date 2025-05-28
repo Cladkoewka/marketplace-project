@@ -7,9 +7,10 @@ import (
 )
 
 type Config struct {
-	DB   DBConfig
-	HTTP HTTPConfig
-	Log  LogConfig
+	DB    DBConfig
+	HTTP  HTTPConfig
+	Log   LogConfig
+	Kafka KafkaConfig
 }
 
 type DBConfig struct {
@@ -24,6 +25,11 @@ type LogConfig struct {
 	Level string
 }
 
+type KafkaConfig struct {
+	Broker string
+	Topic  string
+}
+
 func Load() Config {
 	_ = loadEnv()
 
@@ -36,6 +42,10 @@ func Load() Config {
 		},
 		Log: LogConfig{
 			Level: getEnv("LOG_LEVEL", "info"),
+		},
+		Kafka: KafkaConfig{
+			Broker: getEnv("KAFKA_BROKER", ""),
+			Topic:  getEnv("KAFKA_TOPIC", ""),
 		},
 	}
 }

@@ -5,9 +5,11 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/Cladkoewka/marketplace-project/services/customers/internal/config"
 	"github.com/Cladkoewka/marketplace-project/services/customers/internal/handler"
+	"github.com/Cladkoewka/marketplace-project/services/customers/internal/kafka"
 	"github.com/Cladkoewka/marketplace-project/services/customers/internal/repository"
 	"github.com/Cladkoewka/marketplace-project/services/customers/internal/service"
 )
@@ -27,7 +29,21 @@ func main() {
 
 	repo := repository.NewCustomerRepository(db)
 	svc := service.NewCustomerService(repo)
+
+	// Kafka consumer
+	consumer := kafka.NewConsumer(cfg.Kafka.Broker, cfg.Kafka.Topic, "customers-group")
+	defer consumer.Close()
+
+	go func() {
+		time.Sleep(20*time.Second) // Костыль, нужно наверное через healthcheck сделать
+		if err := consumer.Consume(ctx, svc.HandleOrderPlaced); err != nil {
+			logger.Error("kafka consumer failed", "error", err)
+		}
+	}()
+
+
 	h := handler.NewCustomerHandler(svc)
+
 
 	router := handler.SetupRouter(h)
 	logger.Info("HTTP server listening", "port", cfg.HTTP.Port)
